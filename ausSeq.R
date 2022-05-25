@@ -1,3 +1,4 @@
+# Load packages
 library(ggplot2)
 library(org.Mm.eg.db)
 library(limma)
@@ -5,6 +6,7 @@ library(edgeR)
 library(clusterProfiler)
 library(eulerr)
 
+# Set ggplot theme style
 myTheme <- theme(panel.background = element_blank(),
                  axis.line = element_line(color = "black"),
                  text = element_text(color = 'black', size = 12),
@@ -56,7 +58,7 @@ ggplot(scatMat, aes(x = x, y = y, color = txGroup)) +
   stat_ellipse(level = 0.8) +
   myTheme + labs(x = "Dim1", y = "Dim2", color = "Tx")
 
-#generate models
+#generate models and perform DE analysis
 modelMatInt <- model.matrix(~ 0 + txGroup)
 colnames(modelMatInt) <- gsub("txGroup", "", colnames(modelMatInt))
 
@@ -79,6 +81,7 @@ DBI_DBIdepTop$sig <- F; DBI_DBIdepTop[DBI_DBIdepTop$P.Value < 0.05, ]$sig <- T
 ConDBIdepTop <- topTable(efit, coef = 3, sort.by = "P", n = Inf)
 ConDBIdepTop$sig <- F; ConDBIdepTop[ConDBIdepTop$P.Value < 0.05, ]$sig <- T
 
+# Volcano plots
 ggplot(ConDBITop, aes(x = logFC, y = -log10(P.Value), color = sig)) +
   geom_point(alpha = 0.7) + labs(x = "Log2 fold change", 
                                  y = "-log10 adjusted p value",
@@ -101,6 +104,7 @@ table(ConDBITop$sig)
 table(DBI_DBIdepTop$sig)
 table(ConDBIdepTop$sig)
 
+# Set up lists for overrepresentation analysis
 ConDBISig <- ConDBITop[ConDBITop$P.Value < 0.05,]$entrez
 ConDBISigUp <- ConDBITop[ConDBITop$P.Value < 0.05 & ConDBITop$logFC > 0,]$entrez
 ConDBISigDown <- ConDBITop[ConDBITop$P.Value < 0.05 & ConDBITop$logFC < 0,]$entrez
@@ -117,7 +121,7 @@ ConDBIdepSigDown <- ConDBIdepTop[ConDBIdepTop$P.Value < 0.05 & ConDBIdepTop$logF
 DBIup_DBIdepDown <- intersect(ConDBISigUp, DBI_DBIdepSigUp)
 DBIup_depUp <- intersect(ConDBISigUp, DBI_DBIdepSigDown)
 
-
+# Overrepresentation analysis
 ConDBIPath <- enrichGO(ConDBISig,
                        universe = xS$genes$entrez,
                        OrgDb = org.Mm.eg.db,
@@ -232,6 +236,7 @@ dotplot(ConDBIdepPath)
 dotplot(ConDBIdepPathUp)
 dotplot(ConDBIdepPathDown)
 
+# Boxplots of individual genes
 cpmX <- cpm(xS,log=F)
 cpmX <- data.frame(t(cpmX))
 cpmX$txGroup <- txGroup
